@@ -26,6 +26,7 @@ function normalizeName(child, parentBase) {
 }
 
 var seen = Object.create(null);
+var pendingPromises = Object.create(null);
 var internalRegistry = Object.create(null);
 var externalRegistry = Object.create(null);
 var anonymousEntry;
@@ -74,7 +75,10 @@ function createScriptNode(src, callback) {
 }
 
 function load(name) {
-    return new Promise(function(resolve, reject) {
+    if (pendingPromises[name]) {
+        return pendingPromises[name];
+    }
+    pendingPromises[name] = new Promise(function(resolve, reject) {
         createScriptNode((System.baseURL || '/') + name + '.js', function(err) {
             if (anonymousEntry) {
                 System.register(name, anonymousEntry[0], anonymousEntry[1]);
@@ -93,6 +97,7 @@ function load(name) {
             })).then(resolve, reject);
         });
     });
+    return pendingPromises[name];
 }
 
 
